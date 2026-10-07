@@ -4,6 +4,7 @@ from io import StringIO
 from django.core.management import call_command
 from django.utils import timezone
 
+from django_api_usage.buffers import flush
 from django_api_usage.maintenance import prune
 from django_api_usage.models import Endpoint, EndpointStat
 
@@ -13,8 +14,6 @@ from .base import UsageTestCase
 class ReportCommandTest(UsageTestCase):
     def test_report_lists_usage(self):
         self.client.get("/ping/")
-        from django_api_usage.buffers import flush
-
         flush()
 
         out = StringIO()
@@ -23,8 +22,6 @@ class ReportCommandTest(UsageTestCase):
 
     def test_sunset_candidates_excludes_used_endpoints(self):
         self.client.get("/ping/")
-        from django_api_usage.buffers import flush
-
         flush()
 
         out = StringIO()

@@ -1,7 +1,12 @@
+import unittest
+
 from django.contrib.auth.models import AnonymousUser, Group, User
 from django.test import RequestFactory, TestCase, override_settings
 
-from django_api_usage.drf import HasAPIScope
+try:
+    from django_api_usage.drf import HasAPIScope
+except ImportError:  # pragma: no cover - djangorestframework is optional
+    HasAPIScope = None
 
 
 class FakeView:
@@ -13,6 +18,7 @@ class NoScopeView:
     required_scopes = ()
 
 
+@unittest.skipIf(HasAPIScope is None, "djangorestframework is not installed")
 class HasAPIScopeTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()

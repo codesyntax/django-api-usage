@@ -30,12 +30,12 @@ def _cache():
 
 
 def _buffer_key():
-    return "{}:buffer".format(api_settings.CACHE_PREFIX)
+    return f"{api_settings.CACHE_PREFIX}:buffer"
 
 
 def status_class(status_code):
     """``204`` -> ``2xx``."""
-    return "{}xx".format(int(status_code) // 100)
+    return f"{int(status_code) // 100}xx"
 
 
 def record_hit(dimensions, status_code, consumer=None):

@@ -70,7 +70,7 @@ def default_site_id(request):
 
 
 def _hash(value, salt):
-    return hashlib.sha256("{}:{}".format(salt, value).encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{salt}:{value}".encode()).hexdigest()
 
 
 def _user_agent_family(request):

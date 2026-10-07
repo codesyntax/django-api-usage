@@ -34,7 +34,7 @@ class Endpoint(models.Model):
         ordering = ("app_label", "route_name", "method")
 
     def __str__(self):
-        return "{} {} ({})".format(self.method, self.route_name, self.app_label)
+        return f"{self.method} {self.route_name} ({self.app_label})"
 
     @property
     def is_sunset(self):
@@ -65,9 +65,7 @@ class EndpointStat(models.Model):
         indexes = [models.Index(fields=["date", "endpoint"])]
 
     def __str__(self):
-        return "{} {} {} {}".format(
-            self.date, self.endpoint, self.client_type, self.count
-        )
+        return f"{self.date} {self.endpoint} {self.client_type} {self.count}"
 
 
 class Consumer(models.Model):
@@ -94,4 +92,4 @@ class Consumer(models.Model):
         ordering = ("-last_seen",)
 
     def __str__(self):
-        return "{} {}".format(self.kind, self.ref_hash[:12])
+        return f"{self.kind} {self.ref_hash[:12]}"

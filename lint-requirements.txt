@@ -1,0 +1,9 @@
+# Lint tools used by the CI job, PINNED on purpose.
+#
+# Why pin: without pins, lint can turn red on any day without the code changing.
+# The tokikom repository saw exactly that (3 files red with black 25.9.0 and
+# 0 files with black 26.5.1, with no code change).
+#
+# Keep these versions in sync with the `dev` extra in pyproject.toml.
+black==26.5.1
+ruff==0.16.10

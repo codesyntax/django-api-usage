@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         written = flush()
-        self.stdout.write("Flushed {} counter bucket(s).".format(written))
+        self.stdout.write(f"Flushed {written} counter bucket(s).")
         if not options["no_prune"]:
             deleted = prune()
-            self.stdout.write("Pruned {} old stat row(s).".format(deleted))
+            self.stdout.write(f"Pruned {deleted} old stat row(s).")

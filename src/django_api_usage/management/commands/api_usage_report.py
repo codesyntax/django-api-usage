@@ -41,16 +41,12 @@ class Command(BaseCommand):
             endpoints = candidates_for_deprecation(days, site_id)
             if app_label:
                 endpoints = [ep for ep in endpoints if ep.app_label == app_label]
-            self.stdout.write(
-                "Endpoints without traffic in the last {} day(s):".format(days)
-            )
+            self.stdout.write(f"Endpoints without traffic in the last {days} day(s):")
             for endpoint in endpoints:
                 self.stdout.write(
-                    "  {} {} ({})".format(
-                        endpoint.method, endpoint.route_name, endpoint.app_label
-                    )
+                    f"  {endpoint.method} {endpoint.route_name} ({endpoint.app_label})"
                 )
-            self.stdout.write("Total: {}".format(len(endpoints)))
+            self.stdout.write(f"Total: {len(endpoints)}")
             return
 
         rows = in_use(days, site_id)
@@ -59,8 +55,6 @@ class Command(BaseCommand):
         self.stdout.write("{:<12} {:<40} {:>10}".format("APP", "ENDPOINT", "CALLS"))
         for endpoint, total in rows:
             self.stdout.write(
-                "{:<12} {:<40} {:>10}".format(
-                    endpoint.app_label, endpoint.route_name, total
-                )
+                f"{endpoint.app_label:<12} {endpoint.route_name:<40} {total:>10}"
             )
-        self.stdout.write("Endpoints with traffic: {}".format(len(rows)))
+        self.stdout.write(f"Endpoints with traffic: {len(rows)}")

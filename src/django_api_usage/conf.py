@@ -62,7 +62,7 @@ class ApiUsageSettings:
 
     def __getattr__(self, attr):
         if attr not in DEFAULTS:
-            raise AttributeError("Invalid API_USAGE setting: '%s'" % attr)
+            raise AttributeError(f"Invalid API_USAGE setting: {attr!r}")
         if attr in self._resolved:
             return self._resolved[attr]
         value = self.user_settings.get(attr, DEFAULTS[attr])
