@@ -16,11 +16,25 @@ W002 = Warning(
     id="api_usage.W002",
 )
 W003 = Warning(
-    "API_USAGE['BUFFER_BACKEND'] is 'cache' but the configured cache has no shared "
-    "backend (locmem); counters are per-process and never flushed from other workers. "
-    "Use a shared cache or BUFFER_BACKEND='db'.",
+    "API_USAGE['BUFFER_BACKEND'] is 'cache' but the configured cache backend is "
+    "DummyCache, which stores nothing: no usage will be recorded. Configure a real "
+    "cache or set BUFFER_BACKEND='db'.",
     id="api_usage.W003",
 )
+
+DUMMY_CACHE_BACKEND = "django.core.cache.backends.dummy.DummyCache"
+
+
+def _cache_backend_path():
+    """Dotted path of the configured cache backend, or '' if unavailable."""
+    from django.core.cache import caches
+
+    try:
+        backend = caches[api_settings.CACHE_ALIAS]
+    except Exception:  # pragma: no cover - misconfigured CACHES
+        return ""
+    backend_class = type(backend)
+    return f"{backend_class.__module__}.{backend_class.__name__}"
 
 
 @register()
@@ -35,5 +49,11 @@ def api_usage_checks(app_configs, **kwargs):
 
     if api_settings.TRACK_CONSUMERS and not api_settings.CONSUMER_SALT:
         errors.append(W002)
+
+    if (
+        api_settings.BUFFER_BACKEND == "cache"
+        and _cache_backend_path() == DUMMY_CACHE_BACKEND
+    ):
+        errors.append(W003)
 
     return errors
