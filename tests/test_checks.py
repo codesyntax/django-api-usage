@@ -12,6 +12,10 @@ class ChecksTest(TestCase):
         with override_settings(MIDDLEWARE=[]):
             self.assertIn("api_usage.W001", self._check_ids())
 
+    def test_no_warning_when_a_subclass_is_installed(self):
+        with override_settings(MIDDLEWARE=["tests.middleware.SubclassedMiddleware"]):
+            self.assertNotIn("api_usage.W001", self._check_ids())
+
     def test_warns_when_buffer_cache_is_dummy(self):
         with override_settings(CACHES={"default": {"BACKEND": DUMMY_CACHE_BACKEND}}):
             self.assertIn("api_usage.W003", self._check_ids())

@@ -2,12 +2,14 @@
 
 from django.conf import settings
 from django.core.checks import Warning, register
+from django.utils.module_loading import import_string
 
 from .conf import api_settings
 
 W001 = Warning(
-    "django-api-usage is enabled but 'django_api_usage.middleware.ApiUsageMiddleware' "
-    "is not in MIDDLEWARE; no usage will be recorded.",
+    "django-api-usage is enabled but no subclass of "
+    "'django_api_usage.middleware.ApiUsageMiddleware' is in MIDDLEWARE; no usage "
+    "will be recorded.",
     id="api_usage.W001",
 )
 W002 = Warning(
@@ -23,6 +25,26 @@ W003 = Warning(
 )
 
 DUMMY_CACHE_BACKEND = "django.core.cache.backends.dummy.DummyCache"
+
+
+def _middleware_installed():
+    """True when some MIDDLEWARE entry is ApiUsageMiddleware or a subclass.
+
+    Subclasses are accepted on purpose: projects are encouraged to subclass the
+    middleware to narrow what gets metered (for example, only ``/api/``).
+    """
+    from .middleware import ApiUsageMiddleware
+
+    for entry in getattr(settings, "MIDDLEWARE", []) or []:
+        if not isinstance(entry, str):
+            continue
+        try:
+            obj = import_string(entry)
+        except Exception:  # pragma: no cover - unresolvable entry
+            continue
+        if isinstance(obj, type) and issubclass(obj, ApiUsageMiddleware):
+            return True
+    return False
 
 
 def _cache_backend_path():
@@ -43,8 +65,7 @@ def api_usage_checks(app_configs, **kwargs):
     if not api_settings.ENABLED:
         return errors
 
-    middleware = list(getattr(settings, "MIDDLEWARE", []))
-    if "django_api_usage.middleware.ApiUsageMiddleware" not in middleware:
+    if not _middleware_installed():
         errors.append(W001)
 
     if api_settings.TRACK_CONSUMERS and not api_settings.CONSUMER_SALT:
