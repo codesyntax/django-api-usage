@@ -36,6 +36,7 @@ class ApiUsageMiddleware:
                 "route_path": api_settings.ROUTE_PATH_RESOLVER(request),
                 "method": request.method,
                 "client_type": api_settings.CLIENT_TYPE_RESOLVER(request),
+                "client_app": api_settings.CLIENT_APP_RESOLVER(request),
             }
             consumer = None
             if api_settings.TRACK_CONSUMERS:

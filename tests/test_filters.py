@@ -114,9 +114,11 @@ class FilterTest(UsageTestCase):
             self.assertIn("Aplikazioa", html)
             self.assertIn("Metodoa", html)
 
-    def test_total_count_label_is_left_untranslated(self):
-        """The label was requested verbatim, so the eu catalog keeps it English."""
+    def test_total_count_follows_the_active_language(self):
         with translation.override("eu"):
             html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
+            self.assertIn("GUZTIRA", html)
 
+        with translation.override("en"):
+            html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
             self.assertIn("TOTAL COUNT", html)

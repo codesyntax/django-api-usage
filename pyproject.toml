@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-api-usage"
-version = "0.1.6"
+version = "0.1.7"
 description = "Lightweight, privacy-first usage metering for Django APIs, with an optional deprecation lifecycle layer."
 readme = "README.md"
 license = "MIT"

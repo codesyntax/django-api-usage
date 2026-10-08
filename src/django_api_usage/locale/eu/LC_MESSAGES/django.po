@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-api-usage\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-08 06:10-0500\n"
-"PO-Revision-Date: 2026-10-08 06:20-0500\n"
+"POT-Creation-Date: 2026-10-08 06:45-0500\n"
+"PO-Revision-Date: 2026-10-08 06:55-0500\n"
 "Last-Translator: Urtzi Odriozola <uodriozola@codesyntax.com>\n"
 "Language-Team: Basque\n"
 "Language: eu\n"
@@ -29,7 +29,15 @@ msgstr "Aplikazioa"
 msgid "Method"
 msgstr "Metodoa"
 
-#: src/django_api_usage/admin.py:196
+#: src/django_api_usage/admin.py:136 src/django_api_usage/models.py:106
+msgid "Client application"
+msgstr "Bezero-aplikazioa"
+
+#: src/django_api_usage/admin.py:152
+msgid "Not attributed"
+msgstr "Esleitu gabea"
+
+#: src/django_api_usage/admin.py:244
 msgid ""
 "Search by endpoint path, route name, app, method or replacement (for example "
 "'herriak' or 'artikuluak')."
@@ -37,29 +45,78 @@ msgstr ""
 "Bilatu endpointaren bidearen, route-izenaren, aplikazioaren, metodoaren edo "
 "ordezkoaren arabera (adibidez 'herriak' edo 'artikuluak')."
 
-#: src/django_api_usage/admin.py:251
+#: src/django_api_usage/admin.py:299
 #, python-brace-format
 msgid "Flushed {count} buffered counter(s)."
 msgstr "{count} kontagailu eraman dira bufferretik datu-basera."
 
-#: src/django_api_usage/admin.py:258
+#: src/django_api_usage/admin.py:306
 msgid ""
 "Nothing was buffered: with BUFFER_BACKEND='db' counters are already in the "
 "database."
 msgstr ""
-"Ez zegoen ezer bufferrean: BUFFER_BACKEND='db' denean kontagailuak jada datu-"
-"basean daude."
+"Ez zegoen ezer bufferrean: BUFFER_BACKEND='db' denean kontagailuak jada "
+"datu-basean daude."
 
-#: src/django_api_usage/admin.py:270
+#: src/django_api_usage/admin.py:318
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/change_list.html:12
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/confirm_clear.html:8
 msgid "Clear statistics"
 msgstr "Estatistikak hustu"
 
-#: src/django_api_usage/admin.py:282
+#: src/django_api_usage/admin.py:330
 #, python-brace-format
 msgid "Deleted {count} statistic row(s)."
 msgstr "{count} estatistika-errenkada ezabatu dira."
+
+#: src/django_api_usage/admin.py:395
+msgid "Matching rules"
+msgstr "Bat-etortze arauak"
+
+#: src/django_api_usage/admin.py:404
+msgid ""
+"Checked in this order: account, request host, client network, user agent. "
+"Between applications, the lowest priority wins."
+msgstr ""
+"Ordena honetan egiaztatzen da: kontua, eskaeraren ostalaria, bezeroaren sarea "
+"eta user agent-a. Aplikazioen artean, lehentasun txikiena duenak irabazten du."
+
+#: src/django_api_usage/admin.py:427
+msgid "Accounts"
+msgstr "Kontuak"
+
+#: src/django_api_usage/admin.py:431
+msgid "Counters"
+msgstr "Kontagailuak"
+
+#: src/django_api_usage/models.py:79
+msgid "Short, stable label stored in the counters (e.g. 'mugikorra')."
+msgstr ""
+"Kontagailuetan gordetzen den etiketa labur eta egonkorra (adib. 'mugikorra')."
+
+#: src/django_api_usage/models.py:85
+msgid "Lower wins when several apps could match."
+msgstr "Hainbat aplikaziok bat etorri ahalketenean, txikienak irabazten du."
+
+#: src/django_api_usage/models.py:91
+msgid "Users (and therefore DRF tokens) that belong to this app."
+msgstr "Aplikazio honi dagozkion erabiltzaileak (eta, beraz, haien DRF tokenak)."
+
+#: src/django_api_usage/models.py:95
+msgid "One host per line; matched against the Origin/Referer host."
+msgstr "Ostalari bat lerroko; Origin/Referer ostalariaren aurka egiaztatzen da."
+
+#: src/django_api_usage/models.py:98
+msgid "One CIDR per line, e.g. 10.0.0.0/8."
+msgstr "CIDR bat lerroko, adib. 10.0.0.0/8."
+
+#: src/django_api_usage/models.py:102
+msgid "One substring per line, matched case-insensitively."
+msgstr "Azpikate bat lerroko; maiuskulak/minuskulak bereizi gabe egiaztatzen da."
+
+#: src/django_api_usage/models.py:107
+msgid "Client applications"
+msgstr "Bezero-aplikazioak"
 
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/change_list.html:8
 msgid "Flush now"
@@ -68,7 +125,7 @@ msgstr "Flush orain"
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/change_list.html:21
 #, python-format
 msgid "TOTAL COUNT: %(total)s"
-msgstr ""
+msgstr "GUZTIRA: %(total)s"
 
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/confirm_clear.html:6
 msgid "Home"

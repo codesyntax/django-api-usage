@@ -103,6 +103,7 @@ class CsvExportTest(UsageTestCase):
                 "method",
                 "site_id",
                 "client_type",
+                "client_app",
                 "status_class",
                 "count",
             ],
@@ -121,8 +122,9 @@ class CsvExportTest(UsageTestCase):
         self.assertEqual(body[3], "town-list")
         self.assertEqual(body[4], "GET")
         self.assertEqual(body[6], "anon")
-        self.assertEqual(body[7], "2xx")
-        self.assertEqual(body[8], "7")
+        self.assertEqual(body[7], "")
+        self.assertEqual(body[8], "2xx")
+        self.assertEqual(body[9], "7")
 
     def test_stats_export_only_includes_the_selected_rows(self):
         endpoint = self.make_endpoint()
@@ -133,7 +135,7 @@ class CsvExportTest(UsageTestCase):
 
         rows = self.rows(response)
         self.assertEqual(len(rows), 2)  # header + one row
-        self.assertEqual(rows[1][8], "1")
+        self.assertEqual(rows[1][9], "1")
 
     def test_stats_export_filename_contains_the_date(self):
         endpoint = self.make_endpoint()

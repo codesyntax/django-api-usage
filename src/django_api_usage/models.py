@@ -1,15 +1,25 @@
 """Data model.
 
-Two layers live here on purpose:
+Three layers live here on purpose:
 
 * **Usage metering** (:class:`Endpoint`, :class:`EndpointStat`) is the neutral
-  core: how much is each endpoint of each app used.
+  core: how much is each endpoint of each app used, and by which client
+  application (:class:`ClientApp`).
+* **Client attribution** (:class:`ClientApp`) is editable data, so new consumers
+  can be recognised from the admin without a deploy.
 * **Deprecation lifecycle** (the extra fields on :class:`Endpoint`) is the
   optional layer built on top of the same data.
 """
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+
+
+def _lines(value):
+    """Split a textarea into non-empty, stripped lines."""
+    return [line.strip() for line in (value or "").splitlines() if line.strip()]
 
 
 class Endpoint(models.Model):
@@ -52,19 +62,85 @@ class Endpoint(models.Model):
         return (self.sunset_date - timezone.localdate()).days
 
 
+class ClientApp(models.Model):
+    """An application that consumes the API (mobile app, ERP, partner, ...).
+
+    Editable on purpose: the mapping is data, not code. A blank ``slug``-less
+    request is attributed to no app at all, so the rules can grow without a
+    deploy.
+
+    Resolution order is: authenticated account, request host, client network,
+    then user agent. ``priority`` breaks ties (lower wins).
+    """
+
+    slug = models.SlugField(
+        max_length=64,
+        unique=True,
+        help_text=_("Short, stable label stored in the counters (e.g. 'mugikorra')."),
+    )
+    name = models.CharField(max_length=160, blank=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    priority = models.PositiveSmallIntegerField(
+        default=100, help_text=_("Lower wins when several apps could match.")
+    )
+    accounts = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="+",
+        help_text=_("Users (and therefore DRF tokens) that belong to this app."),
+    )
+    domains = models.TextField(
+        blank=True,
+        help_text=_("One host per line; matched against the Origin/Referer host."),
+    )
+    ip_networks = models.TextField(
+        blank=True, help_text=_("One CIDR per line, e.g. 10.0.0.0/8.")
+    )
+    user_agent_patterns = models.TextField(
+        blank=True,
+        help_text=_("One substring per line, matched case-insensitively."),
+    )
+
+    class Meta:
+        verbose_name = _("Client application")
+        verbose_name_plural = _("Client applications")
+        ordering = ("priority", "slug")
+
+    def __str__(self):
+        return self.name or self.slug
+
+    def domain_list(self):
+        return _lines(self.domains)
+
+    def network_list(self):
+        return _lines(self.ip_networks)
+
+    def user_agent_list(self):
+        return [pattern.lower() for pattern in _lines(self.user_agent_patterns)]
+
+
 class EndpointStat(models.Model):
-    """Aggregated counter per endpoint, day, client type and status class."""
+    """Aggregated counter per endpoint, day, client and status class."""
 
     endpoint = models.ForeignKey(
         Endpoint, on_delete=models.CASCADE, related_name="stats"
     )
     date = models.DateField(db_index=True)
     client_type = models.CharField(max_length=16, default="anon")
+    #: ``ClientApp.slug``; blank when the caller could not be attributed.
+    client_app = models.CharField(max_length=64, blank=True)
     status_class = models.CharField(max_length=4, default="2xx")
     count = models.PositiveIntegerField(default=0)
 
     class Meta:
-        unique_together = ("endpoint", "date", "client_type", "status_class")
+        unique_together = (
+            "endpoint",
+            "date",
+            "client_type",
+            "client_app",
+            "status_class",
+        )
         ordering = ("-date",)
         indexes = [models.Index(fields=["date", "endpoint"])]
 

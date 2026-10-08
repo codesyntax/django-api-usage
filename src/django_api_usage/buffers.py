@@ -30,6 +30,7 @@ _FIELDS = (
     "route_path",
     "method",
     "client_type",
+    "client_app",
 )
 
 
@@ -126,6 +127,7 @@ def _write_to_db(dimensions, status_code_class, count):
             endpoint=endpoint,
             date=timezone.localdate(),
             client_type=dimensions.get("client_type") or "anon",
+            client_app=dimensions.get("client_app") or "",
             status_class=status_code_class,
             defaults={"count": count},
         )

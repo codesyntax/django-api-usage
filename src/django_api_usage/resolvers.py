@@ -5,8 +5,14 @@ project-specific knowledge. Resolvers must be cheap: they run on every request.
 """
 
 import hashlib
+import ipaddress
+import logging
+import time
+from urllib.parse import urlsplit
 
 from django.conf import settings as django_settings
+
+logger = logging.getLogger("django_api_usage")
 
 
 def _view_module(match):
@@ -114,3 +120,113 @@ def default_consumer(request):
     if not ip:
         return None
     return ("ip_hash", _hash(ip, salt), user_agent_family)
+
+
+# -- client application attribution -----------------------------------------
+
+#: Safety net for processes that did not see the signal (see ``apps.py``).
+CLIENT_APP_RULES_TTL = 60
+_rules_cache = {"loaded_at": 0.0, "rules": None}
+
+
+def reset_client_app_cache(**kwargs):
+    """Forget the cached :class:`~django_api_usage.models.ClientApp` rules."""
+    _rules_cache["rules"] = None
+    _rules_cache["loaded_at"] = 0.0
+
+
+def _load_client_app_rules():
+    from .models import ClientApp
+
+    rules = {"by_user": {}, "hosts": [], "networks": [], "patterns": []}
+    apps = ClientApp.objects.filter(is_active=True).prefetch_related("accounts")
+    for app in apps:  # ordered by priority, then slug
+        for user_id in app.accounts.values_list("pk", flat=True):
+            rules["by_user"].setdefault(user_id, app.slug)
+        rules["hosts"].extend((host.lower(), app.slug) for host in app.domain_list())
+        for cidr in app.network_list():
+            try:
+                network = ipaddress.ip_network(cidr, strict=False)
+            except ValueError:
+                logger.warning(
+                    "django-api-usage: ignoring invalid network %r on %s", cidr, app
+                )
+                continue
+            rules["networks"].append((network, app.slug))
+        rules["patterns"].extend(
+            (pattern, app.slug) for pattern in app.user_agent_list()
+        )
+    return rules
+
+
+def _client_app_rules():
+    now = time.monotonic()
+    if (
+        _rules_cache["rules"] is None
+        or now - _rules_cache["loaded_at"] > CLIENT_APP_RULES_TTL
+    ):
+        _rules_cache["rules"] = _load_client_app_rules()
+        _rules_cache["loaded_at"] = now
+    return _rules_cache["rules"]
+
+
+def _request_host(request):
+    """Host of the ``Origin`` (or ``Referer``) header, lowercased."""
+    for header in ("HTTP_ORIGIN", "HTTP_REFERER"):
+        value = request.META.get(header)
+        if value:
+            host = urlsplit(value).hostname
+            if host:
+                return host.lower()
+    return ""
+
+
+def client_ip(request):
+    """Client address, honouring the first ``X-Forwarded-For`` entry."""
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    return forwarded.split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
+
+
+def client_app_from_rules(request):
+    """Attribute the caller to a :class:`ClientApp`, or return ``""``.
+
+    The rules live in the database and are editable from the admin, so a new
+    consumer can be recognised without a deploy. Monitored order: the caller's
+    account (a dedicated token), then the request host, then the client network,
+    then the user agent. ``ClientApp.priority`` decides the order between apps.
+    """
+    rules = _client_app_rules()
+
+    user = getattr(request, "user", None)
+    if user is not None and getattr(user, "is_authenticated", False):
+        slug = rules["by_user"].get(user.pk)
+        if slug:
+            return slug
+
+    host = _request_host(request)
+    if host:
+        for pattern, slug in rules["hosts"]:
+            if host == pattern or host.endswith("." + pattern):
+                return slug
+
+    address = _as_address(client_ip(request))
+    if address is not None:
+        for network, slug in rules["networks"]:
+            if address.version == network.version and address in network:
+                return slug
+
+    user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
+    if user_agent:
+        for pattern, slug in rules["patterns"]:
+            if pattern in user_agent:
+                return slug
+    return ""
+
+
+def _as_address(value):
+    if not value:
+        return None
+    try:
+        return ipaddress.ip_address(value)
+    except ValueError:
+        return None

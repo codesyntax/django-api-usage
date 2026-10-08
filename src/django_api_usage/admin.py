@@ -16,7 +16,7 @@ Everything is plain Django: no extra dependency beyond Django itself.
 import csv
 
 from django.contrib import admin, messages
-from django.db.models import Sum
+from django.db.models import Count, OuterRef, Subquery, Sum
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -25,7 +25,7 @@ from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
 from .buffers import flush
-from .models import Consumer, Endpoint, EndpointStat
+from .models import ClientApp, Consumer, Endpoint, EndpointStat
 
 
 class CsvExportMixin:
@@ -122,6 +122,45 @@ class StatMethodListFilter(MethodListFilter):
     field_path = "endpoint__method"
 
 
+#: Sentinel for the calls that could not be attributed to any application.
+UNATTRIBUTED = "__none__"
+
+
+class ClientAppListFilter(admin.SimpleListFilter):
+    """Client applications, plus the calls that were not attributed.
+
+    Applications defined in the table are listed even before they have traffic,
+    which is what you want while checking that a new rule works.
+    """
+
+    title = _("Client application")
+    parameter_name = "client_app"
+
+    def lookups(self, request, model_admin):
+        used = set(
+            model_admin.model.objects.order_by()
+            .values_list("client_app", flat=True)
+            .distinct()
+        )
+        names = dict(ClientApp.objects.values_list("slug", "name"))
+        defined = set(
+            ClientApp.objects.filter(is_active=True).values_list("slug", flat=True)
+        )
+        choices = [
+            (slug, names.get(slug) or slug) for slug in sorted((used | defined) - {""})
+        ]
+        choices.append((UNATTRIBUTED, _("Not attributed")))
+        return choices
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == UNATTRIBUTED:
+            return queryset.filter(client_app="")
+        if value:
+            return queryset.filter(client_app=value)
+        return queryset
+
+
 @admin.register(Endpoint)
 class EndpointAdmin(CsvExportMixin, admin.ModelAdmin):
     actions = ("export_as_csv",)
@@ -171,13 +210,22 @@ class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
         ("method", "endpoint__method"),
         ("site_id", "endpoint__site_id"),
         ("client_type", "client_type"),
+        ("client_app", "client_app"),
         ("status_class", "status_class"),
         ("count", "count"),
     )
-    list_display = ("date", "endpoint", "client_type", "status_class", "count")
+    list_display = (
+        "date",
+        "endpoint",
+        "client_type",
+        "client_app",
+        "status_class",
+        "count",
+    )
     list_filter = (
         "date",
         "client_type",
+        ClientAppListFilter,
         "status_class",
         StatAppLabelListFilter,
         StatMethodListFilter,
@@ -314,3 +362,72 @@ class ConsumerAdmin(CsvExportMixin, admin.ModelAdmin):
     @admin.display(description="Reference")
     def ref_short(self, obj):
         return obj.ref_hash[:12]
+
+
+@admin.register(ClientApp)
+class ClientAppAdmin(CsvExportMixin, admin.ModelAdmin):
+    """Editable table: recognise a new consumer without deploying anything."""
+
+    actions = ("export_as_csv",)
+    csv_columns = (
+        ("slug", "slug"),
+        ("name", "name"),
+        ("priority", "priority"),
+        ("is_active", "is_active"),
+        ("domains", "domains"),
+        ("ip_networks", "ip_networks"),
+        ("user_agent_patterns", "user_agent_patterns"),
+    )
+    list_display = (
+        "slug",
+        "name",
+        "priority",
+        "is_active",
+        "accounts_total",
+        "counters_total",
+    )
+    list_filter = ("is_active",)
+    search_fields = ("slug", "name", "description")
+    filter_horizontal = ("accounts",)
+    fieldsets = (
+        (None, {"fields": ("slug", "name", "description", "priority", "is_active")}),
+        (
+            _("Matching rules"),
+            {
+                "fields": (
+                    "accounts",
+                    "domains",
+                    "ip_networks",
+                    "user_agent_patterns",
+                ),
+                "description": _(
+                    "Checked in this order: account, request host, client "
+                    "network, user agent. Between applications, the lowest "
+                    "priority wins."
+                ),
+            },
+        ),
+    )
+
+    def get_queryset(self, request):
+        counters = (
+            EndpointStat.objects.filter(client_app=OuterRef("slug"))
+            .order_by()
+            .values("client_app")
+            .annotate(total=Sum("count"))
+            .values("total")
+        )
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(accounts_total=Count("accounts", distinct=True))
+            .annotate(counters_total=Subquery(counters))
+        )
+
+    @admin.display(description=_("Accounts"), ordering="accounts_total")
+    def accounts_total(self, obj):
+        return obj.accounts_total
+
+    @admin.display(description=_("Counters"), ordering="counters_total")
+    def counters_total(self, obj):
+        return obj.counters_total or 0

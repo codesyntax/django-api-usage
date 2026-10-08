@@ -103,6 +103,28 @@ similar):
   and method), so the file can be fed straight to pandas or a spreadsheet. Use
   the "select all" link to export every row matching the current filters.
 
+## Client applications
+
+Not every caller is a person: ERPs, partners, your own web front end and the
+native mobile apps also hit the API. `ClientApp` is an **editable table**, so a
+new consumer is recognised from the admin, without a deploy:
+
+| Rule | Matched against | Use it for |
+|---|---|---|
+| `accounts` | the authenticated user (and therefore its DRF token) | one dedicated token per integration (ERP, partner...) |
+| `domains` | the `Origin`/`Referer` host, subdomains included | your own web front end |
+| `ip_networks` | the client address, against a CIDR (one per line) | internal networks and servers |
+| `user_agent_patterns` | a case-insensitive substring of `User-Agent` | native mobile apps |
+
+Rules are checked in that order, and `priority` decides between applications
+(lower wins). A caller matching nothing stays unattributed, so the dimension
+cannot grow out of control: `EndpointStat.client_app` only ever holds a
+`ClientApp.slug`.
+
+Counters, the CSV export and the admin filters all carry the application, so
+"which application calls this endpoint?" is one filter away. The **Endpoint
+stats** changelist also offers *Not attributed*: the callers still to classify.
+
 ## Deprecation lifecycle
 
 `Endpoint` carries `deprecated`, `sunset_date`, `replacement` and `owner`, so the
