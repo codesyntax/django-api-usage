@@ -14,6 +14,7 @@ Everything is plain Django: no extra dependency beyond Django itself.
 """
 
 import csv
+import time
 
 from django.contrib import admin, messages
 from django.db.models import Count, OuterRef, Subquery, Sum
@@ -76,6 +77,45 @@ METHOD_COLORS = {
     "OPTIONS": ("#e2e3e5", "#41464b"),
 }
 DEFAULT_METHOD_COLORS = ("#e2e3e5", "#41464b")
+
+
+#: Site labels are read for every row of the changelist, so they are cached for
+#: a short while (the table changes very rarely).
+SITE_LABELS_TTL = 60
+_site_labels_cache = {"loaded_at": 0.0, "value": None}
+
+
+def _load_site_labels():
+    """``{pk: domain}`` when django.contrib.sites is installed, else ``{}``."""
+    try:
+        from django.contrib.sites.models import Site
+    except (ImportError, RuntimeError):
+        return {}
+    return dict(Site.objects.values_list("pk", "domain"))
+
+
+def _site_labels():
+    now = time.monotonic()
+    if (
+        _site_labels_cache["value"] is None
+        or now - _site_labels_cache["loaded_at"] > SITE_LABELS_TTL
+    ):
+        _site_labels_cache["value"] = _load_site_labels()
+        _site_labels_cache["loaded_at"] = now
+    return _site_labels_cache["value"]
+
+
+def reset_site_labels_cache(**kwargs):
+    """Forget the cached site domains (used by tests and after editing sites)."""
+    _site_labels_cache["value"] = None
+    _site_labels_cache["loaded_at"] = 0.0
+
+
+def _site_label(site_id):
+    """Domain of a site, falling back to the raw id (or ``None``)."""
+    if site_id is None:
+        return None
+    return _site_labels().get(site_id, str(site_id))
 
 
 def _method_badge_html(method):
@@ -148,6 +188,42 @@ class StatMethodListFilter(MethodListFilter):
     field_path = "endpoint__method"
 
 
+class SiteListFilter(admin.SimpleListFilter):
+    """Sites, shown by domain when django.contrib.sites is available.
+
+    Useful when several front ends (several sites) call the same backend: the
+    endpoint's site tells them apart.
+    """
+
+    title = _("Site")
+    parameter_name = "site"
+    field_path = "site_id"
+
+    def lookups(self, request, model_admin):
+        labels = _site_labels()
+        if labels:
+            return [(pk, domain) for pk, domain in sorted(labels.items())]
+        used = (
+            model_admin.model.objects.order_by()
+            .values_list(self.field_path, flat=True)
+            .distinct()
+        )
+        return [
+            (value, str(value)) for value in sorted(v for v in used if v is not None)
+        ]
+
+    def queryset(self, request, queryset):
+        if not self.value():
+            return queryset
+        return queryset.filter(**{self.field_path: self.value()})
+
+
+class StatSiteListFilter(SiteListFilter):
+    """Site filter for the stats changelist (through the endpoint)."""
+
+    field_path = "endpoint__site_id"
+
+
 #: Sentinel for the calls that could not be attributed to any application.
 UNATTRIBUTED = "__none__"
 
@@ -207,7 +283,7 @@ class EndpointAdmin(CsvExportMixin, admin.ModelAdmin):
         "route_path",
         "route_name",
         "method_badge",
-        "site_id",
+        "site",
         "deprecated",
         "sunset_date",
         "replacement",
@@ -217,7 +293,7 @@ class EndpointAdmin(CsvExportMixin, admin.ModelAdmin):
         "deprecated",
         AppLabelListFilter,
         MethodListFilter,
-        "site_id",
+        SiteListFilter,
     )
     search_fields = ("route_path", "route_name", "replacement", "owner", "notes")
     list_editable = ("deprecated", "sunset_date", "replacement", "owner")
@@ -225,6 +301,10 @@ class EndpointAdmin(CsvExportMixin, admin.ModelAdmin):
     @admin.display(description=_("Method"), ordering="method")
     def method_badge(self, obj):
         return _method_badge_html(obj.method)
+
+    @admin.display(description=_("Site"), ordering="site_id")
+    def site(self, obj):
+        return _site_label(obj.site_id)
 
 
 @admin.register(EndpointStat)
@@ -246,6 +326,7 @@ class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
     )
     list_display = (
         "date",
+        "site",
         "application",
         "method_badge",
         "endpoint_path",
@@ -259,6 +340,7 @@ class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
         "client_type",
         ClientAppListFilter,
         "status_class",
+        StatSiteListFilter,
         StatAppLabelListFilter,
         StatMethodListFilter,
     )
@@ -283,6 +365,10 @@ class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
     @admin.display(description=_("Application"), ordering="endpoint__app_label")
     def application(self, obj):
         return obj.endpoint.app_label
+
+    @admin.display(description=_("Site"), ordering="endpoint__site_id")
+    def site(self, obj):
+        return _site_label(obj.endpoint.site_id)
 
     @admin.display(description=_("Method"), ordering="endpoint__method")
     def method_badge(self, obj):
