@@ -81,6 +81,24 @@ API_USAGE = {
 }
 ```
 
+## Admin
+
+The package ships a read-only admin for the three models, built with plain
+Django — **no dependency beyond Django itself** (no `django-object-actions` or
+similar):
+
+* **Endpoint stats** changelist: a search box (by endpoint path, route name, app,
+  method or replacement), filters by date, profile and role, and the **sum of
+  the `count` column** for the rows matching the current filters.
+* **Flush now**: moves counters buffered in the cache into the database, so they
+  appear immediately when you run with `BUFFER_BACKEND = "cache"`.
+* **Clear statistics**: empties the aggregated counters behind a confirmation
+  page (endpoints and their deprecation metadata are kept).
+* **Export selected rows to CSV** on all three admins. Relations are flattened
+  into one analysis-friendly table (a stat row carries its endpoint's path, app
+  and method), so the file can be fed straight to pandas or a spreadsheet. Use
+  the "select all" link to export every row matching the current filters.
+
 ## Deprecation lifecycle
 
 `Endpoint` carries `deprecated`, `sunset_date`, `replacement` and `owner`, so the

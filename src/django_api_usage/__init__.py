@@ -1,3 +1,3 @@
 """django-api-usage: usage metering for Django APIs, with deprecation support."""
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"

@@ -6,14 +6,21 @@
   deprecation metadata) are kept on purpose.
 
 The changelist also shows the **sum of the ``count`` column** for the rows that
-match the current filters.
+match the current filters, and every admin ships an **export to CSV** action for
+the selected rows (all the rows matching the filters can be selected with the
+"select all" link).
+
+Everything is plain Django: no extra dependency beyond Django itself.
 """
+
+import csv
 
 from django.contrib import admin, messages
 from django.db.models import Sum
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
@@ -21,8 +28,53 @@ from .buffers import flush
 from .models import Consumer, Endpoint, EndpointStat
 
 
+class CsvExportMixin:
+    """Admin action to download the selected rows as CSV.
+
+    ``csv_columns`` is an iterable of ``(header, queryset lookup)`` pairs. The
+    lookups are resolved by the database in a single query, so related rows can
+    be flattened into one analysis-friendly table (for example a stat row plus
+    its endpoint's path and app label).
+    """
+
+    #: ``(header, lookup)`` pairs. The header is written as-is (keep it stable
+    #: and ASCII: the file is meant to be read by pandas or a spreadsheet).
+    csv_columns = ()
+    #: Prefix of the downloaded filename; the date is appended.
+    csv_filename_prefix = "django-api-usage"
+
+    @admin.action(description=_("Export selected rows to CSV"))
+    def export_as_csv(self, request, queryset):
+        columns = list(self.csv_columns)
+        rows = queryset.values_list(*(lookup for _, lookup in columns))
+
+        filename = f"{self.csv_filename_prefix}-{timezone.localdate():%Y-%m-%d}.csv"
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        # Byte order mark, so Excel detects UTF-8 (content may be Basque).
+        response.write("\ufeff")
+
+        writer = csv.writer(response)
+        writer.writerow([header for header, _ in columns])
+        writer.writerows(rows)
+        return response
+
+
 @admin.register(Endpoint)
-class EndpointAdmin(admin.ModelAdmin):
+class EndpointAdmin(CsvExportMixin, admin.ModelAdmin):
+    actions = ("export_as_csv",)
+    csv_columns = (
+        ("app_label", "app_label"),
+        ("route_path", "route_path"),
+        ("route_name", "route_name"),
+        ("method", "method"),
+        ("site_id", "site_id"),
+        ("deprecated", "deprecated"),
+        ("sunset_date", "sunset_date"),
+        ("replacement", "replacement"),
+        ("owner", "owner"),
+        ("notes", "notes"),
+    )
     list_display = (
         "app_label",
         "route_path",
@@ -40,7 +92,21 @@ class EndpointAdmin(admin.ModelAdmin):
 
 
 @admin.register(EndpointStat)
-class EndpointStatAdmin(admin.ModelAdmin):
+class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
+    actions = ("export_as_csv",)
+    # Flattened on purpose: the CSV is meant for analysis (pandas, spreadsheet)
+    # without having to join endpoints by hand.
+    csv_columns = (
+        ("date", "date"),
+        ("app_label", "endpoint__app_label"),
+        ("route_path", "endpoint__route_path"),
+        ("route_name", "endpoint__route_name"),
+        ("method", "endpoint__method"),
+        ("site_id", "endpoint__site_id"),
+        ("client_type", "client_type"),
+        ("status_class", "status_class"),
+        ("count", "count"),
+    )
     list_display = ("date", "endpoint", "client_type", "status_class", "count")
     list_filter = ("date", "client_type", "status_class")
     list_select_related = ("endpoint",)
@@ -147,7 +213,18 @@ class EndpointStatAdmin(admin.ModelAdmin):
 
 
 @admin.register(Consumer)
-class ConsumerAdmin(admin.ModelAdmin):
+class ConsumerAdmin(CsvExportMixin, admin.ModelAdmin):
+    actions = ("export_as_csv",)
+    csv_columns = (
+        ("kind", "kind"),
+        ("ref_hash", "ref_hash"),
+        ("user_agent_family", "user_agent_family"),
+        ("request_count", "request_count"),
+        ("first_seen", "first_seen"),
+        ("last_seen", "last_seen"),
+        ("contact", "contact"),
+        ("notes", "notes"),
+    )
     list_display = (
         "kind",
         "ref_short",
