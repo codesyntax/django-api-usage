@@ -1,16 +1,8 @@
-![Python versions](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-api-usage)
 ![Django versions](https://img.shields.io/badge/django-4.2%20%7C%205.2-0C4B33)
 ![Status](https://img.shields.io/badge/status-alpha-orange)
-
-<!--
-Dynamic badges. Enable them once the repository is public and the package is
-published on PyPI: shields.io cannot read private repositories, and the PyPI
-badges need an existing release.
-
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-api-usage)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/codesyntax/django-api-usage/ci.yml)
 ![PyPI - Version](https://img.shields.io/pypi/v/django-api-usage)
--->
 
 # django-api-usage
 
@@ -111,8 +103,9 @@ measure what it *would* have denied before enforcing it.
 
 ## Status
 
-Alpha. Skeleton with the core implemented; migrations, admin and tests included.
-License and packaging metadata still to be finalised.
+**Alpha.** The core is implemented: metering middleware, models and migrations,
+management commands, the deprecation layer and a DRF shadow-mode permission.
+Tested on Python 3.10-3.12 and Django 4.2/5.2. MIT licensed.
 
 ## Development
 
