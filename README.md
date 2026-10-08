@@ -88,8 +88,12 @@ Django — **no dependency beyond Django itself** (no `django-object-actions` or
 similar):
 
 * **Endpoint stats** changelist: a search box (by endpoint path, route name, app,
-  method or replacement), filters by date, profile and role, and the **sum of
-  the `count` column** for the rows matching the current filters.
+  method or replacement), filters by date, client type, status class, and
+  **Application** / **Method**, plus the **sum of the `count` column** for the
+  rows matching the current filters. The Method filter lists the riskiest verbs
+  first (`DELETE`, `POST`, ...), so write and destructive calls stand out.
+* **Endpoint** changelist: the same Application / Method filters, plus
+  deprecation state, the site and the CSV export.
 * **Flush now**: moves counters buffered in the cache into the database, so they
   appear immediately when you run with `BUFFER_BACKEND = "cache"`.
 * **Clear statistics**: empties the aggregated counters behind a confirmation

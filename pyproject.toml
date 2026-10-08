@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-api-usage"
-version = "0.1.5"
+version = "0.1.6"
 description = "Lightweight, privacy-first usage metering for Django APIs, with an optional deprecation lifecycle layer."
 readme = "README.md"
 license = "MIT"
@@ -42,7 +42,11 @@ Issues = "https://github.com/codesyntax/django-api-usage/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-django_api_usage = ["templates/admin/django_api_usage/endpointstat/*.html"]
+django_api_usage = [
+    "templates/admin/django_api_usage/endpointstat/*.html",
+    "locale/*/LC_MESSAGES/*.po",
+    "locale/*/LC_MESSAGES/*.mo",
+]
 
 [tool.black]
 line-length = 88

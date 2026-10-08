@@ -60,6 +60,68 @@ class CsvExportMixin:
         return response
 
 
+#: HTTP methods, riskiest first: the point of the filter is spotting the
+#: write/destructive calls (POST, DELETE, ...) instead of the read ones.
+METHOD_ORDER = ("DELETE", "POST", "PUT", "PATCH", "GET", "HEAD", "OPTIONS")
+
+
+class AppLabelListFilter(admin.SimpleListFilter):
+    """Distinct application labels, under a readable title."""
+
+    title = _("Application")
+    parameter_name = "app_label"
+    #: Lookup against the admin's model; overridden for related filters.
+    field_path = "app_label"
+
+    def lookups(self, request, model_admin):
+        values = (
+            model_admin.model.objects.order_by()
+            .values_list(self.field_path, flat=True)
+            .distinct()
+        )
+        return [(value, value) for value in sorted(v for v in values if v)]
+
+    def queryset(self, request, queryset):
+        if not self.value():
+            return queryset
+        return queryset.filter(**{self.field_path: self.value()})
+
+
+class MethodListFilter(admin.SimpleListFilter):
+    """HTTP methods, riskiest (DELETE, POST, ...) first."""
+
+    title = _("Method")
+    parameter_name = "method"
+    field_path = "method"
+
+    def lookups(self, request, model_admin):
+        values = set(
+            model_admin.model.objects.order_by()
+            .values_list(self.field_path, flat=True)
+            .distinct()
+        )
+        ordered = [method for method in METHOD_ORDER if method in values]
+        rest = sorted(m for m in values if m and m not in METHOD_ORDER)
+        return [(method, method) for method in ordered + rest]
+
+    def queryset(self, request, queryset):
+        if not self.value():
+            return queryset
+        return queryset.filter(**{self.field_path: self.value()})
+
+
+class StatAppLabelListFilter(AppLabelListFilter):
+    """Application filter for the stats changelist (through the endpoint)."""
+
+    field_path = "endpoint__app_label"
+
+
+class StatMethodListFilter(MethodListFilter):
+    """Method filter for the stats changelist (through the endpoint)."""
+
+    field_path = "endpoint__method"
+
+
 @admin.register(Endpoint)
 class EndpointAdmin(CsvExportMixin, admin.ModelAdmin):
     actions = ("export_as_csv",)
@@ -86,7 +148,12 @@ class EndpointAdmin(CsvExportMixin, admin.ModelAdmin):
         "replacement",
         "owner",
     )
-    list_filter = ("deprecated", "app_label", "method", "site_id")
+    list_filter = (
+        "deprecated",
+        AppLabelListFilter,
+        MethodListFilter,
+        "site_id",
+    )
     search_fields = ("route_path", "route_name", "replacement", "owner", "notes")
     list_editable = ("deprecated", "sunset_date", "replacement", "owner")
 
@@ -108,7 +175,13 @@ class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
         ("count", "count"),
     )
     list_display = ("date", "endpoint", "client_type", "status_class", "count")
-    list_filter = ("date", "client_type", "status_class")
+    list_filter = (
+        "date",
+        "client_type",
+        "status_class",
+        StatAppLabelListFilter,
+        StatMethodListFilter,
+    )
     list_select_related = ("endpoint",)
     date_hierarchy = "date"
     # Search across the related endpoint (case-insensitive "contains").
