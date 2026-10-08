@@ -1,0 +1,24 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+  <li>
+    <form method="post" action="{% url 'admin:django_api_usage_endpointstat_flush' %}">
+      {% csrf_token %}
+      <button type="submit" class="button">{% translate "Flush now" %}</button>
+    </form>
+  </li>
+  <li>
+    <a href="{% url 'admin:django_api_usage_endpointstat_clear' %}" class="button">{% translate "Clear statistics" %}</a>
+  </li>
+  {{ block.super }}
+{% endblock %}
+
+{% block result_list %}
+  {{ block.super }}
+  {% if usage_total is not None %}
+    <p class="help" style="text-align: right; padding: 0.5em 1em; font-weight: bold;">
+      {% blocktranslate with total=usage_total %}Total calls in the filtered rows: {{ total }}{% endblocktranslate %}
+    </p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+    &rsaquo; <a href="{% url 'admin:django_api_usage_endpointstat_changelist' %}">{% translate "Endpoint stats" %}</a>
+    &rsaquo; {% translate "Clear statistics" %}
+  </div>
+{% endblock %}
+
+{% block content %}
+  <p>
+    {% blocktranslate count counter=total %}
+      This will delete the only aggregated statistic row. Endpoints and their
+      deprecation metadata are kept.
+    {% plural %}
+      This will delete all {{ counter }} aggregated statistic rows. Endpoints
+      and their deprecation metadata are kept.
+    {% endblocktranslate %}
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="submit" value="{% translate 'Yes, clear statistics' %}">
+    <a href="{% url 'admin:django_api_usage_endpointstat_changelist' %}">{% translate "Cancel" %}</a>
+  </form>
+{% endblock %}

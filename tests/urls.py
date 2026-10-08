@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path
 
@@ -11,6 +12,7 @@ def boom(request):
 
 
 urlpatterns = [
+    path("admin/", admin.site.urls),
     path("ping/", ping, name="ping"),
     path("boom/", boom, name="boom"),
 ]
