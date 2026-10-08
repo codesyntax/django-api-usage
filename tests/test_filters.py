@@ -1,5 +1,7 @@
 """Tests for the Application / Method changelist filters."""
 
+import re
+
 from django.contrib import admin as django_admin
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -87,6 +89,51 @@ class FilterTest(UsageTestCase):
     def test_stats_admin_filters_by_application(self):
         rows = self.stats(app_label="api")
         self.assertEqual([row.endpoint for row in rows], [self.post_endpoint])
+
+    # -- columns ------------------------------------------------------------
+
+    def test_stats_show_the_application_and_the_method_as_columns(self):
+        html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
+
+        # The columns exist and carry the endpoint's data (not just the titles).
+        self.assertIn('class="field-application"', html)
+        self.assertIn('class="field-method_badge"', html)
+        self.assertIn(">gida</td>", html)
+
+    def test_the_method_is_rendered_as_a_coloured_badge(self):
+        html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
+
+        # DELETE in red, POST in blue; the verb lives inside the pill.
+        self.assertIn("background:#f8d7da", html)
+        self.assertIn(">DELETE</span>", html)
+        self.assertIn("background:#cfe2ff", html)
+        self.assertIn(">POST</span>", html)
+
+    def test_the_endpoint_column_shows_only_the_path(self):
+        html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
+
+        # The verb and the app have their own columns, so the cell carries just
+        # the path. Asserted on the cells: from Django 5.1 on, the action
+        # checkbox aria-label repeats str(obj), which includes the endpoint.
+        cells = re.findall(r'<td class="field-endpoint_path">([^<]*)</td>', html)
+
+        self.assertCountEqual(cells, ["api/3.0/artikuluak/", "api/3.0/gida/"])
+
+    def test_the_endpoint_column_strips_the_regex_anchors(self):
+        endpoint = Endpoint.objects.create(
+            app_label="api", route_path="^api/3.0/eskelak/$", method="GET"
+        )
+        EndpointStat.objects.create(
+            endpoint=endpoint,
+            date="2026-10-08",
+            client_type="anon",
+            status_class="2xx",
+            count=1,
+        )
+
+        html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
+
+        self.assertIn(">api/3.0/eskelak/</td>", html)
 
     # -- filter presentation ------------------------------------------------
 

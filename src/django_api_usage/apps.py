@@ -13,8 +13,12 @@ class DjangoApiUsageConfig(AppConfig):
         self._connect_client_app_signals()
 
     def _connect_client_app_signals(self):
-        """Drop the cached ClientApp rules as soon as the table changes."""
-        from django.db.models.signals import m2m_changed, post_delete, post_save
+        """Drop the cached ClientApp rules as soon as the table changes.
+
+        Account assignments are not cached (they are a single indexed lookup),
+        so only the rule table needs to invalidate anything.
+        """
+        from django.db.models.signals import post_delete, post_save
 
         from .models import ClientApp
         from .resolvers import reset_client_app_cache
@@ -26,9 +30,4 @@ class DjangoApiUsageConfig(AppConfig):
             reset_client_app_cache,
             sender=ClientApp,
             dispatch_uid="api_usage_app_delete",
-        )
-        m2m_changed.connect(
-            reset_client_app_cache,
-            sender=ClientApp.accounts.through,
-            dispatch_uid="api_usage_app_accounts",
         )

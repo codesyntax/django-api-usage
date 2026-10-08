@@ -5,7 +5,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 
 from django_api_usage.buffers import flush
-from django_api_usage.models import ClientApp, Endpoint, EndpointStat
+from django_api_usage.models import ClientApp, ClientAppAccount, Endpoint, EndpointStat
 from django_api_usage.resolvers import client_app_from_rules, reset_client_app_cache
 
 from .base import UsageTestCase
@@ -29,9 +29,26 @@ class ClientAppResolverTest(UsageTestCase):
         """A dedicated token (its user) identifies the integration."""
         user = User.objects.create_user("zoho", "zoho@example.com", "pw")
         app = ClientApp.objects.create(slug="zoho", priority=10)
-        app.accounts.add(user)
+        ClientAppAccount.objects.create(client_app=app, user=user)
 
         self.assertEqual(client_app_from_rules(self.request(user=user)), "zoho")
+
+    def test_an_account_of_an_inactive_application_is_ignored(self):
+        user = User.objects.create_user("zaharra", "z@example.com", "pw")
+        app = ClientApp.objects.create(slug="zaharra", is_active=False)
+        ClientAppAccount.objects.create(client_app=app, user=user)
+
+        self.assertEqual(client_app_from_rules(self.request(user=user)), "")
+
+    def test_the_account_rule_wins_over_the_user_agent(self):
+        user = User.objects.create_user("erp", "erp@example.com", "pw")
+        erp = ClientApp.objects.create(slug="goiena_erp")
+        ClientAppAccount.objects.create(client_app=erp, user=user)
+        ClientApp.objects.create(slug="mugikorra", user_agent_patterns="tokio")
+
+        request = self.request(user=user, HTTP_USER_AGENT="tokio/1")
+
+        self.assertEqual(client_app_from_rules(request), "goiena_erp")
 
     def test_the_request_host_matches_subdomains(self):
         ClientApp.objects.create(slug="elhuyar", domains="elhuyar.eus")
@@ -143,6 +160,23 @@ class ClientAppAdminTest(UsageTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Matching rules")
+
+    def test_account_assignments_are_editable_in_the_admin(self):
+        app = ClientApp.objects.create(slug="zoho", name="Zoho")
+        account = User.objects.create_user("zoho_erabiltzailea", "z@example.com", "pw")
+        ClientAppAccount.objects.create(client_app=app, user=account)
+
+        listing = self.client.get(
+            reverse("admin:django_api_usage_clientappaccount_changelist")
+        )
+
+        self.assertEqual(listing.status_code, 200)
+        self.assertContains(listing, "zoho_erabiltzailea")
+
+        add_page = self.client.get(
+            reverse("admin:django_api_usage_clientappaccount_add")
+        )
+        self.assertEqual(add_page.status_code, 200)
 
     def test_stats_can_be_filtered_by_application(self):
         self.assertEqual(self.rows(client_app="mugikorra"), {self.attributed})

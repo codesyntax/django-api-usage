@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-api-usage\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-08 06:45-0500\n"
+"POT-Creation-Date: 2026-10-08 07:11-0500\n"
 "PO-Revision-Date: 2026-10-08 06:55-0500\n"
 "Last-Translator: Urtzi Odriozola <uodriozola@codesyntax.com>\n"
 "Language-Team: Basque\n"
@@ -29,7 +29,7 @@ msgstr "Aplikazioa"
 msgid "Method"
 msgstr "Metodoa"
 
-#: src/django_api_usage/admin.py:136 src/django_api_usage/models.py:106
+#: src/django_api_usage/admin.py:136 src/django_api_usage/models.py:100
 msgid "Client application"
 msgstr "Bezero-aplikazioa"
 
@@ -55,8 +55,8 @@ msgid ""
 "Nothing was buffered: with BUFFER_BACKEND='db' counters are already in the "
 "database."
 msgstr ""
-"Ez zegoen ezer bufferrean: BUFFER_BACKEND='db' denean kontagailuak jada "
-"datu-basean daude."
+"Ez zegoen ezer bufferrean: BUFFER_BACKEND='db' denean kontagailuak jada datu-"
+"basean daude."
 
 #: src/django_api_usage/admin.py:318
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/change_list.html:12
@@ -69,25 +69,31 @@ msgstr "Estatistikak hustu"
 msgid "Deleted {count} statistic row(s)."
 msgstr "{count} estatistika-errenkada ezabatu dira."
 
-#: src/django_api_usage/admin.py:395
+#: src/django_api_usage/admin.py:394
 msgid "Matching rules"
 msgstr "Bat-etortze arauak"
 
-#: src/django_api_usage/admin.py:404
+#: src/django_api_usage/admin.py:398
 msgid ""
 "Checked in this order: account, request host, client network, user agent. "
-"Between applications, the lowest priority wins."
+"Between applications, the lowest priority wins. Accounts are assigned from "
+"the 'Client application accounts' table."
 msgstr ""
-"Ordena honetan egiaztatzen da: kontua, eskaeraren ostalaria, bezeroaren sarea "
-"eta user agent-a. Aplikazioen artean, lehentasun txikiena duenak irabazten du."
+"Ordena honetan egiaztatzen da: kontua, eskaeraren ostalaria, bezeroaren "
+"sarea eta user agent-a. Aplikazioen artean, lehentasun txikiena duenak "
+"irabazten du. Kontuak 'Bezero-aplikazioko kontuak' taulatik esleitzen dira."
 
-#: src/django_api_usage/admin.py:427
+#: src/django_api_usage/admin.py:422
 msgid "Accounts"
 msgstr "Kontuak"
 
-#: src/django_api_usage/admin.py:431
+#: src/django_api_usage/admin.py:426
 msgid "Counters"
 msgstr "Kontagailuak"
+
+#: src/django_api_usage/admin.py:454 src/django_api_usage/models.py:134
+msgid "Account"
+msgstr "Kontua"
 
 #: src/django_api_usage/models.py:79
 msgid "Short, stable label stored in the counters (e.g. 'mugikorra')."
@@ -98,25 +104,35 @@ msgstr ""
 msgid "Lower wins when several apps could match."
 msgstr "Hainbat aplikaziok bat etorri ahalketenean, txikienak irabazten du."
 
-#: src/django_api_usage/models.py:91
-msgid "Users (and therefore DRF tokens) that belong to this app."
-msgstr "Aplikazio honi dagozkion erabiltzaileak (eta, beraz, haien DRF tokenak)."
-
-#: src/django_api_usage/models.py:95
+#: src/django_api_usage/models.py:89
 msgid "One host per line; matched against the Origin/Referer host."
-msgstr "Ostalari bat lerroko; Origin/Referer ostalariaren aurka egiaztatzen da."
+msgstr ""
+"Ostalari bat lerroko; Origin/Referer ostalariaren aurka egiaztatzen da."
 
-#: src/django_api_usage/models.py:98
+#: src/django_api_usage/models.py:92
 msgid "One CIDR per line, e.g. 10.0.0.0/8."
 msgstr "CIDR bat lerroko, adib. 10.0.0.0/8."
 
-#: src/django_api_usage/models.py:102
+#: src/django_api_usage/models.py:96
 msgid "One substring per line, matched case-insensitively."
-msgstr "Azpikate bat lerroko; maiuskulak/minuskulak bereizi gabe egiaztatzen da."
+msgstr ""
+"Azpikate bat lerroko; maiuskulak/minuskulak bereizi gabe egiaztatzen da."
 
-#: src/django_api_usage/models.py:107
+#: src/django_api_usage/models.py:101
 msgid "Client applications"
 msgstr "Bezero-aplikazioak"
+
+#: src/django_api_usage/models.py:135
+msgid "One application per account, so the token is unambiguous."
+msgstr "Aplikazio bat kontu bakoitzeko, tokena zalantzarik gabea izan dadin."
+
+#: src/django_api_usage/models.py:140
+msgid "Client application account"
+msgstr "Bezero-aplikazioko kontua"
+
+#: src/django_api_usage/models.py:141
+msgid "Client application accounts"
+msgstr "Bezero-aplikazioko kontuak"
 
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/change_list.html:8
 msgid "Flush now"
@@ -167,3 +183,7 @@ msgstr "Bai, estatistikak hustu"
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/confirm_clear.html:25
 msgid "Cancel"
 msgstr ""
+
+#~ msgid "Users (and therefore DRF tokens) that belong to this app."
+#~ msgstr ""
+#~ "Aplikazio honi dagozkion erabiltzaileak (eta, beraz, haien DRF tokenak)."

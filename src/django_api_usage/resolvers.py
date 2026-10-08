@@ -138,11 +138,9 @@ def reset_client_app_cache(**kwargs):
 def _load_client_app_rules():
     from .models import ClientApp
 
-    rules = {"by_user": {}, "hosts": [], "networks": [], "patterns": []}
-    apps = ClientApp.objects.filter(is_active=True).prefetch_related("accounts")
+    rules = {"hosts": [], "networks": [], "patterns": []}
+    apps = ClientApp.objects.filter(is_active=True)
     for app in apps:  # ordered by priority, then slug
-        for user_id in app.accounts.values_list("pk", flat=True):
-            rules["by_user"].setdefault(user_id, app.slug)
         rules["hosts"].extend((host.lower(), app.slug) for host in app.domain_list())
         for cidr in app.network_list():
             try:
@@ -157,6 +155,18 @@ def _load_client_app_rules():
             (pattern, app.slug) for pattern in app.user_agent_list()
         )
     return rules
+
+
+def _client_app_for_account(user_id):
+    """Application assigned to an account, with a single indexed lookup."""
+    from .models import ClientAppAccount
+
+    return (
+        ClientAppAccount.objects.filter(user_id=user_id, client_app__is_active=True)
+        .values_list("client_app__slug", flat=True)
+        .first()
+        or ""
+    )
 
 
 def _client_app_rules():
@@ -199,7 +209,7 @@ def client_app_from_rules(request):
 
     user = getattr(request, "user", None)
     if user is not None and getattr(user, "is_authenticated", False):
-        slug = rules["by_user"].get(user.pk)
+        slug = _client_app_for_account(user.pk)
         if slug:
             return slug
 

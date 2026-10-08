@@ -91,7 +91,9 @@ similar):
   method or replacement), filters by date, client type, status class, and
   **Application** / **Method**, plus the **sum of the `count` column** for the
   rows matching the current filters. The Method filter lists the riskiest verbs
-  first (`DELETE`, `POST`, ...), so write and destructive calls stand out.
+  first (`DELETE`, `POST`, ...), and the list shows **Application** and
+  **Method** as columns — the verb as a coloured badge (writes amber, deletes
+  red), so the dangerous traffic is obvious at a glance.
 * **Endpoint** changelist: the same Application / Method filters, plus
   deprecation state, the site and the CSV export.
 * **Flush now**: moves counters buffered in the cache into the database, so they
@@ -103,23 +105,33 @@ similar):
   and method), so the file can be fed straight to pandas or a spreadsheet. Use
   the "select all" link to export every row matching the current filters.
 
+If you upgraded from an earlier release, run
+`manage.py api_usage_backfill_paths` once: endpoints recorded before the path was
+captured only have their route name, and the command resolves it back to the
+path (`--dry-run` first if you want to see what it would do).
+
 ## Client applications
 
 Not every caller is a person: ERPs, partners, your own web front end and the
-native mobile apps also hit the API. `ClientApp` is an **editable table**, so a
-new consumer is recognised from the admin, without a deploy:
+native mobile apps also hit the API. `ClientApp` is an **editable table**, and
+the rules are checked in this order:
 
-| Rule | Matched against | Use it for |
-|---|---|---|
-| `accounts` | the authenticated user (and therefore its DRF token) | one dedicated token per integration (ERP, partner...) |
-| `domains` | the `Origin`/`Referer` host, subdomains included | your own web front end |
-| `ip_networks` | the client address, against a CIDR (one per line) | internal networks and servers |
-| `user_agent_patterns` | a case-insensitive substring of `User-Agent` | native mobile apps |
+| # | Rule | Matched against | Use it for |
+|---|---|---|---|
+| 1 | `ClientAppAccount` | the authenticated account (and therefore its DRF token) | one dedicated token per integration (ERP, partner...) |
+| 2 | `domains` | the `Origin`/`Referer` host, subdomains included | your own web front end |
+| 3 | `ip_networks` | the client address, against a CIDR (one per line) | internal networks and servers |
+| 4 | `user_agent_patterns` | a case-insensitive substring of `User-Agent` | native mobile apps |
 
-Rules are checked in that order, and `priority` decides between applications
-(lower wins). A caller matching nothing stays unattributed, so the dimension
-cannot grow out of control: `EndpointStat.client_app` only ever holds a
-`ClientApp.slug`.
+An explicit assignment always wins: if the token's account belongs to an
+application, that is the answer. Accounts without an assignment (an app user
+reading the news) fall through to the user agent, which is what identifies the
+native apps. `priority` decides between applications (lower wins), and a caller
+matching nothing stays unattributed.
+
+Assignments are one row per account (a point lookup, indexed) instead of a
+many-to-many list holding every account, so nothing grows with the number of
+users: `EndpointStat.client_app` only ever holds a `ClientApp.slug`.
 
 Counters, the CSV export and the admin filters all carry the application, so
 "which application calls this endpoint?" is one filter away. The **Endpoint
