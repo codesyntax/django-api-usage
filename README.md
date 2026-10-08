@@ -1,8 +1,8 @@
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-api-usage)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-api-usage?logo=pypi)
 ![Django versions](https://img.shields.io/badge/django-4.2%20%7C%205.2-0C4B33)
 ![Status](https://img.shields.io/badge/status-alpha-orange)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/codesyntax/django-api-usage/ci.yml)
-![PyPI - Version](https://img.shields.io/pypi/v/django-api-usage)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/codesyntax/django-api-usage/ci.yml?logo=github)
+![PyPI - Version](https://img.shields.io/pypi/v/django-api-usage?logo=pypi)
 
 # django-api-usage
 
