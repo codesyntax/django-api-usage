@@ -18,7 +18,7 @@
   {{ block.super }}
   {% if usage_total is not None %}
     <p class="help" style="text-align: right; padding: 0.5em 1em; font-weight: bold;">
-      {% blocktranslate with total=usage_total %}Total calls in the filtered rows: {{ total }}{% endblocktranslate %}
+      {% blocktranslate with total=usage_total %}TOTAL COUNT: {{ total }}{% endblocktranslate %}
     </p>
   {% endif %}
 {% endblock %}

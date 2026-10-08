@@ -44,6 +44,17 @@ class EndpointStatAdmin(admin.ModelAdmin):
     list_filter = ("date", "client_type", "status_class")
     list_select_related = ("endpoint",)
     date_hierarchy = "date"
+    # Search across the related endpoint (case-insensitive "contains").
+    search_fields = (
+        "endpoint__route_name",
+        "endpoint__app_label",
+        "endpoint__method",
+        "endpoint__replacement",
+    )
+    search_help_text = _(
+        "Search by endpoint route, app, method or replacement (for example "
+        "'artikuluak' or 'gida')."
+    )
     change_list_template = "admin/django_api_usage/endpointstat/change_list.html"
 
     def has_add_permission(self, request):

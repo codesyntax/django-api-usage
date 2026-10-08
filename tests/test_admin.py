@@ -87,7 +87,7 @@ class AdminButtonsTest(UsageTestCase):
         response = self.client.get(reverse(CHANGELIST))
 
         self.assertEqual(response.context_data["usage_total"], 12)
-        self.assertContains(response, "Total calls in the filtered rows")
+        self.assertContains(response, "TOTAL COUNT")
 
     def test_total_respects_the_selected_filters(self):
         api = Endpoint.objects.create(app_label="api", route_name="a", method="GET")
@@ -102,6 +102,65 @@ class AdminButtonsTest(UsageTestCase):
         response = self.client.get(reverse(CHANGELIST), {"client_type": "user"})
 
         self.assertEqual(response.context_data["usage_total"], 7)
+
+    def test_search_box_is_rendered(self):
+        response = self.client.get(reverse(CHANGELIST))
+
+        self.assertContains(response, 'id="searchbar"')
+
+    def test_search_filters_rows_by_endpoint_text(self):
+        api = Endpoint.objects.create(
+            app_label="api", route_name="artikuluak-list", method="GET"
+        )
+        gida = Endpoint.objects.create(
+            app_label="gida", route_name="gida-sailak-list", method="GET"
+        )
+        EndpointStat.objects.create(
+            endpoint=api, date="2026-10-08", client_type="anon", count=5
+        )
+        EndpointStat.objects.create(
+            endpoint=gida, date="2026-10-08", client_type="anon", count=7
+        )
+
+        response = self.client.get(reverse(CHANGELIST), {"q": "artikuluak"})
+
+        self.assertEqual(response.context_data["usage_total"], 5)
+        self.assertEqual(len(response.context_data["cl"].result_list), 1)
+
+    def test_search_matches_the_app_label(self):
+        api = Endpoint.objects.create(
+            app_label="api", route_name="artikuluak-list", method="GET"
+        )
+        gida = Endpoint.objects.create(
+            app_label="gida", route_name="gida-sailak-list", method="GET"
+        )
+        EndpointStat.objects.create(
+            endpoint=api, date="2026-10-08", client_type="anon", count=5
+        )
+        EndpointStat.objects.create(
+            endpoint=gida, date="2026-10-08", client_type="anon", count=7
+        )
+
+        response = self.client.get(reverse(CHANGELIST), {"q": "gida"})
+
+        self.assertEqual(response.context_data["usage_total"], 7)
+
+    def test_search_combines_with_list_filters(self):
+        api = Endpoint.objects.create(
+            app_label="api", route_name="artikuluak-list", method="GET"
+        )
+        EndpointStat.objects.create(
+            endpoint=api, date="2026-10-08", client_type="anon", count=5
+        )
+        EndpointStat.objects.create(
+            endpoint=api, date="2026-10-08", client_type="user", count=3
+        )
+
+        response = self.client.get(
+            reverse(CHANGELIST), {"q": "artikuluak", "client_type": "user"}
+        )
+
+        self.assertEqual(response.context_data["usage_total"], 3)
 
     def test_clear_is_not_available_without_admin_permission(self):
         self._make_stat()
