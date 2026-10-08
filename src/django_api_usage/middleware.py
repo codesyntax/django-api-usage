@@ -33,6 +33,7 @@ class ApiUsageMiddleware:
                 "site_id": api_settings.SITE_RESOLVER(request),
                 "app_label": api_settings.APP_LABEL_RESOLVER(request),
                 "route_name": api_settings.ROUTE_NAME_RESOLVER(request),
+                "route_path": api_settings.ROUTE_PATH_RESOLVER(request),
                 "method": request.method,
                 "client_type": api_settings.CLIENT_TYPE_RESOLVER(request),
             }

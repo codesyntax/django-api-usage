@@ -32,6 +32,7 @@ DEFAULTS = {
     # Resolvers (dotted path or callable).
     "APP_LABEL_RESOLVER": "django_api_usage.resolvers.default_app_label",
     "ROUTE_NAME_RESOLVER": "django_api_usage.resolvers.default_route_name",
+    "ROUTE_PATH_RESOLVER": "django_api_usage.resolvers.default_route_path",
     "CLIENT_TYPE_RESOLVER": "django_api_usage.resolvers.default_client_type",
     "SITE_RESOLVER": "django_api_usage.resolvers.default_site_id",
     "CONSUMER_RESOLVER": "django_api_usage.resolvers.default_consumer",

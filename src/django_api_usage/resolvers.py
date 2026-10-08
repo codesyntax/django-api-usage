@@ -48,6 +48,18 @@ def default_route_name(request):
     )
 
 
+def default_route_path(request):
+    """Return the URL pattern that matched, e.g. ``api/3.0/herriak/``.
+
+    Path *patterns* (never the raw path) keep cardinality bounded. This is what
+    people search for in the admin, so it is stored next to ``route_name``.
+    """
+    match = getattr(request, "resolver_match", None)
+    if match is None:
+        return ""
+    return getattr(match, "route", "") or ""
+
+
 def default_client_type(request):
     """Classify the caller as ``client``, ``user`` or ``anon``."""
     if getattr(request, "api_client", None) is not None:

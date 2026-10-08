@@ -20,6 +20,10 @@ class Endpoint(models.Model):
     site_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     app_label = models.CharField(max_length=64, db_index=True)
     route_name = models.CharField(max_length=160)
+    # URL pattern that matched (e.g. "api/3.0/herriak/"). Informational: the
+    # endpoint identity stays (site, app, route_name, method). Makes the admin
+    # searchable by path, which is how people actually refer to endpoints.
+    route_path = models.CharField(max_length=200, blank=True)
     method = models.CharField(max_length=8)
 
     # Deprecation lifecycle (optional layer).
@@ -34,7 +38,7 @@ class Endpoint(models.Model):
         ordering = ("app_label", "route_name", "method")
 
     def __str__(self):
-        return f"{self.method} {self.route_name} ({self.app_label})"
+        return f"{self.method} {self.route_path or self.route_name} ({self.app_label})"
 
     @property
     def is_sunset(self):

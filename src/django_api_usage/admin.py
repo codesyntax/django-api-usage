@@ -25,6 +25,7 @@ from .models import Consumer, Endpoint, EndpointStat
 class EndpointAdmin(admin.ModelAdmin):
     list_display = (
         "app_label",
+        "route_path",
         "route_name",
         "method",
         "site_id",
@@ -34,7 +35,7 @@ class EndpointAdmin(admin.ModelAdmin):
         "owner",
     )
     list_filter = ("deprecated", "app_label", "method", "site_id")
-    search_fields = ("route_name", "replacement", "owner", "notes")
+    search_fields = ("route_path", "route_name", "replacement", "owner", "notes")
     list_editable = ("deprecated", "sunset_date", "replacement", "owner")
 
 
@@ -46,14 +47,15 @@ class EndpointStatAdmin(admin.ModelAdmin):
     date_hierarchy = "date"
     # Search across the related endpoint (case-insensitive "contains").
     search_fields = (
+        "endpoint__route_path",
         "endpoint__route_name",
         "endpoint__app_label",
         "endpoint__method",
         "endpoint__replacement",
     )
     search_help_text = _(
-        "Search by endpoint route, app, method or replacement (for example "
-        "'artikuluak' or 'gida')."
+        "Search by endpoint path, route name, app, method or replacement (for "
+        "example 'herriak' or 'artikuluak')."
     )
     change_list_template = "admin/django_api_usage/endpointstat/change_list.html"
 

@@ -145,6 +145,30 @@ class AdminButtonsTest(UsageTestCase):
 
         self.assertEqual(response.context_data["usage_total"], 7)
 
+    def test_search_matches_the_endpoint_path(self):
+        api = Endpoint.objects.create(
+            app_label="api",
+            route_name="town-list",
+            route_path="api/3.0/herriak/",
+            method="GET",
+        )
+        gida = Endpoint.objects.create(
+            app_label="api",
+            route_name="artikuluak-list",
+            route_path="api/3.0/artikuluak/",
+            method="GET",
+        )
+        EndpointStat.objects.create(
+            endpoint=api, date="2026-10-08", client_type="anon", count=5
+        )
+        EndpointStat.objects.create(
+            endpoint=gida, date="2026-10-08", client_type="anon", count=7
+        )
+
+        response = self.client.get(reverse(CHANGELIST), {"q": "herriak"})
+
+        self.assertEqual(response.context_data["usage_total"], 5)
+
     def test_search_combines_with_list_filters(self):
         api = Endpoint.objects.create(
             app_label="api", route_name="artikuluak-list", method="GET"

@@ -15,6 +15,7 @@ class MiddlewareTest(UsageTestCase):
         self.assertEqual(stat.status_class, "2xx")
         self.assertEqual(stat.client_type, "anon")
         self.assertEqual(stat.endpoint.route_name, "ping")
+        self.assertEqual(stat.endpoint.route_path, "ping/")
         self.assertEqual(stat.endpoint.method, "GET")
 
     def test_aggregates_repeated_hits(self):

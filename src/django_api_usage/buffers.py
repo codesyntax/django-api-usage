@@ -21,8 +21,16 @@ from .models import Consumer, Endpoint, EndpointStat
 
 logger = logging.getLogger("django_api_usage")
 
-# Order matters: it is how a buffered bucket is encoded into a cache key.
-_FIELDS = ("site_id", "app_label", "route_name", "method", "client_type")
+# The dimensions stored per bucket. Route patterns may contain any character,
+# so a bucket is encoded as JSON rather than with a separator.
+_FIELDS = (
+    "site_id",
+    "app_label",
+    "route_name",
+    "route_path",
+    "method",
+    "client_type",
+)
 
 
 def _cache():
@@ -51,15 +59,17 @@ def record_hit(dimensions, status_code, consumer=None):
         _touch_consumer(consumer)
 
 
+def _bucket_key(dimensions, status_code_class):
+    payload = {field: dimensions.get(field) for field in _FIELDS}
+    return json.dumps([payload, status_code_class], sort_keys=True)
+
+
 def _buffer(dimensions, status_code_class):
     cache = _cache()
     key = _buffer_key()
     raw = cache.get(key)
     counters = json.loads(raw) if raw else {}
-    bucket = "{}|{}".format(
-        "|".join(str(dimensions.get(field, "")) for field in _FIELDS),
-        status_code_class,
-    )
+    bucket = _bucket_key(dimensions, status_code_class)
     counters[bucket] = counters.get(bucket, 0) + 1
     cache.set(key, json.dumps(counters), None)
 
@@ -78,12 +88,12 @@ def flush():
     counters = json.loads(raw) if isinstance(raw, str) else raw
     written = 0
     for bucket, count in counters.items():
-        dimension_key, _, status_code_class = bucket.rpartition("|")
-        values = dimension_key.split("|")
-        if len(values) != len(_FIELDS):
-            logger.warning("django-api-usage: skipping malformed bucket %r", bucket)
+        try:
+            payload, status_code_class = json.loads(bucket)
+            dimensions = {field: payload.get(field) for field in _FIELDS}
+        except (TypeError, ValueError):
+            logger.warning("django-api-usage: skipping unreadable bucket %r", bucket)
             continue
-        dimensions = dict(zip(_FIELDS, values))
         dimensions["site_id"] = _as_int(dimensions.get("site_id"))
         _write_to_db(dimensions, status_code_class, count)
         written += 1
@@ -100,13 +110,18 @@ def _as_int(value):
 
 
 def _write_to_db(dimensions, status_code_class, count):
+    route_path = dimensions.get("route_path") or ""
     with transaction.atomic():
-        endpoint, _ = Endpoint.objects.get_or_create(
+        endpoint, created = Endpoint.objects.get_or_create(
             site_id=dimensions.get("site_id"),
             app_label=dimensions.get("app_label") or "unknown",
             route_name=dimensions.get("route_name") or "unknown",
             method=dimensions.get("method") or "GET",
+            defaults={"route_path": route_path},
         )
+        # Backfill the path for rows created before the field existed.
+        if not created and route_path and not endpoint.route_path:
+            Endpoint.objects.filter(pk=endpoint.pk).update(route_path=route_path)
         stat, created = EndpointStat.objects.get_or_create(
             endpoint=endpoint,
             date=timezone.localdate(),
