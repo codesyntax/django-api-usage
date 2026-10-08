@@ -32,8 +32,9 @@ redis = ["redis>=4.0"]
 dev = ["pytest", "pytest-django", "djangorestframework>=3.14", "black==26.5.1", "ruff==0.16.10"]
 
 [project.urls]
-Homepage = "https://gitlab.com/codesyntax/django-api-usage"
-Issues = "https://gitlab.com/codesyntax/django-api-usage/-/issues"
+Homepage = "https://github.com/codesyntax/django-api-usage"
+Source = "https://github.com/codesyntax/django-api-usage"
+Issues = "https://github.com/codesyntax/django-api-usage/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
