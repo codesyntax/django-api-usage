@@ -88,6 +88,25 @@ class FilterTest(UsageTestCase):
         rows = self.stats(app_label="api")
         self.assertEqual([row.endpoint for row in rows], [self.post_endpoint])
 
+    # -- columns ------------------------------------------------------------
+
+    def test_stats_show_the_application_and_the_method_as_columns(self):
+        html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
+
+        # The columns exist and carry the endpoint's data (not just the titles).
+        self.assertIn('class="field-application"', html)
+        self.assertIn('class="field-method_badge"', html)
+        self.assertIn(">gida</td>", html)
+
+    def test_the_method_is_rendered_as_a_coloured_badge(self):
+        html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
+
+        # DELETE in red, POST in blue; the verb lives inside the pill.
+        self.assertIn("background:#f8d7da", html)
+        self.assertIn(">DELETE</span>", html)
+        self.assertIn("background:#cfe2ff", html)
+        self.assertIn(">POST</span>", html)
+
     # -- filter presentation ------------------------------------------------
 
     def test_titles_are_readable_instead_of_raw_field_names(self):

@@ -21,6 +21,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
@@ -63,6 +64,31 @@ class CsvExportMixin:
 #: HTTP methods, riskiest first: the point of the filter is spotting the
 #: write/destructive calls (POST, DELETE, ...) instead of the read ones.
 METHOD_ORDER = ("DELETE", "POST", "PUT", "PATCH", "GET", "HEAD", "OPTIONS")
+
+#: Pill colours per verb: reads green/blue, writes amber, deletes red.
+METHOD_COLORS = {
+    "GET": ("#d1e7dd", "#0f5132"),
+    "POST": ("#cfe2ff", "#084298"),
+    "PUT": ("#fff3cd", "#664d03"),
+    "PATCH": ("#fff3cd", "#664d03"),
+    "DELETE": ("#f8d7da", "#842029"),
+    "HEAD": ("#e2e3e5", "#41464b"),
+    "OPTIONS": ("#e2e3e5", "#41464b"),
+}
+DEFAULT_METHOD_COLORS = ("#e2e3e5", "#41464b")
+
+
+def _method_badge_html(method):
+    """Coloured pill for an HTTP verb, so writes stand out at a glance."""
+    verb = (method or "").upper()
+    background, color = METHOD_COLORS.get(verb, DEFAULT_METHOD_COLORS)
+    return format_html(
+        '<span style="background:{};color:{};padding:1px 7px;border-radius:9px;'
+        'font-size:11px;font-weight:600;white-space:nowrap">{}</span>',
+        background,
+        color,
+        verb,
+    )
 
 
 class AppLabelListFilter(admin.SimpleListFilter):
@@ -180,7 +206,7 @@ class EndpointAdmin(CsvExportMixin, admin.ModelAdmin):
         "app_label",
         "route_path",
         "route_name",
-        "method",
+        "method_badge",
         "site_id",
         "deprecated",
         "sunset_date",
@@ -195,6 +221,10 @@ class EndpointAdmin(CsvExportMixin, admin.ModelAdmin):
     )
     search_fields = ("route_path", "route_name", "replacement", "owner", "notes")
     list_editable = ("deprecated", "sunset_date", "replacement", "owner")
+
+    @admin.display(description=_("Method"), ordering="method")
+    def method_badge(self, obj):
+        return _method_badge_html(obj.method)
 
 
 @admin.register(EndpointStat)
@@ -216,6 +246,8 @@ class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
     )
     list_display = (
         "date",
+        "application",
+        "method_badge",
         "endpoint",
         "client_type",
         "client_app",
@@ -245,6 +277,16 @@ class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
         "example 'herriak' or 'artikuluak')."
     )
     change_list_template = "admin/django_api_usage/endpointstat/change_list.html"
+
+    # -- columns ------------------------------------------------------------
+
+    @admin.display(description=_("Application"), ordering="endpoint__app_label")
+    def application(self, obj):
+        return obj.endpoint.app_label
+
+    @admin.display(description=_("Method"), ordering="endpoint__method")
+    def method_badge(self, obj):
+        return _method_badge_html(obj.endpoint.method)
 
     def has_add_permission(self, request):
         return False

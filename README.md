@@ -91,7 +91,9 @@ similar):
   method or replacement), filters by date, client type, status class, and
   **Application** / **Method**, plus the **sum of the `count` column** for the
   rows matching the current filters. The Method filter lists the riskiest verbs
-  first (`DELETE`, `POST`, ...), so write and destructive calls stand out.
+  first (`DELETE`, `POST`, ...), and the list shows **Application** and
+  **Method** as columns — the verb as a coloured badge (writes amber, deletes
+  red), so the dangerous traffic is obvious at a glance.
 * **Endpoint** changelist: the same Application / Method filters, plus
   deprecation state, the site and the CSV export.
 * **Flush now**: moves counters buffered in the cache into the database, so they
