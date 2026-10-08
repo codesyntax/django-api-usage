@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-api-usage\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-08 07:11-0500\n"
+"POT-Creation-Date: 2026-10-08 08:11-0500\n"
 "PO-Revision-Date: 2026-10-08 06:55-0500\n"
 "Last-Translator: Urtzi Odriozola <uodriozola@codesyntax.com>\n"
 "Language-Team: Basque\n"
@@ -17,27 +17,33 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/django_api_usage/admin.py:46
+#: src/django_api_usage/admin.py:48
 msgid "Export selected rows to CSV"
 msgstr "Esportatu hautatutako errenkadak CSVra"
 
-#: src/django_api_usage/admin.py:71
+#: src/django_api_usage/admin.py:131 src/django_api_usage/admin.py:359
 msgid "Application"
 msgstr "Aplikazioa"
 
-#: src/django_api_usage/admin.py:93
+#: src/django_api_usage/admin.py:153 src/django_api_usage/admin.py:295
+#: src/django_api_usage/admin.py:367
 msgid "Method"
 msgstr "Metodoa"
 
-#: src/django_api_usage/admin.py:136 src/django_api_usage/models.py:100
+#: src/django_api_usage/admin.py:192 src/django_api_usage/admin.py:299
+#: src/django_api_usage/admin.py:363
+msgid "Site"
+msgstr "Webgunea"
+
+#: src/django_api_usage/admin.py:232 src/django_api_usage/models.py:100
 msgid "Client application"
 msgstr "Bezero-aplikazioa"
 
-#: src/django_api_usage/admin.py:152
+#: src/django_api_usage/admin.py:248
 msgid "Not attributed"
 msgstr "Esleitu gabea"
 
-#: src/django_api_usage/admin.py:244
+#: src/django_api_usage/admin.py:352
 msgid ""
 "Search by endpoint path, route name, app, method or replacement (for example "
 "'herriak' or 'artikuluak')."
@@ -45,12 +51,16 @@ msgstr ""
 "Bilatu endpointaren bidearen, route-izenaren, aplikazioaren, metodoaren edo "
 "ordezkoaren arabera (adibidez 'herriak' edo 'artikuluak')."
 
-#: src/django_api_usage/admin.py:299
+#: src/django_api_usage/admin.py:371
+msgid "Endpoint"
+msgstr "Endpointa"
+
+#: src/django_api_usage/admin.py:427
 #, python-brace-format
 msgid "Flushed {count} buffered counter(s)."
 msgstr "{count} kontagailu eraman dira bufferretik datu-basera."
 
-#: src/django_api_usage/admin.py:306
+#: src/django_api_usage/admin.py:434
 msgid ""
 "Nothing was buffered: with BUFFER_BACKEND='db' counters are already in the "
 "database."
@@ -58,22 +68,22 @@ msgstr ""
 "Ez zegoen ezer bufferrean: BUFFER_BACKEND='db' denean kontagailuak jada datu-"
 "basean daude."
 
-#: src/django_api_usage/admin.py:318
+#: src/django_api_usage/admin.py:446
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/change_list.html:12
 #: src/django_api_usage/templates/admin/django_api_usage/endpointstat/confirm_clear.html:8
 msgid "Clear statistics"
 msgstr "Estatistikak hustu"
 
-#: src/django_api_usage/admin.py:330
+#: src/django_api_usage/admin.py:458
 #, python-brace-format
 msgid "Deleted {count} statistic row(s)."
 msgstr "{count} estatistika-errenkada ezabatu dira."
 
-#: src/django_api_usage/admin.py:394
+#: src/django_api_usage/admin.py:522
 msgid "Matching rules"
 msgstr "Bat-etortze arauak"
 
-#: src/django_api_usage/admin.py:398
+#: src/django_api_usage/admin.py:526
 msgid ""
 "Checked in this order: account, request host, client network, user agent. "
 "Between applications, the lowest priority wins. Accounts are assigned from "
@@ -83,15 +93,15 @@ msgstr ""
 "sarea eta user agent-a. Aplikazioen artean, lehentasun txikiena duenak "
 "irabazten du. Kontuak 'Bezero-aplikazioko kontuak' taulatik esleitzen dira."
 
-#: src/django_api_usage/admin.py:422
+#: src/django_api_usage/admin.py:550
 msgid "Accounts"
 msgstr "Kontuak"
 
-#: src/django_api_usage/admin.py:426
+#: src/django_api_usage/admin.py:554
 msgid "Counters"
 msgstr "Kontagailuak"
 
-#: src/django_api_usage/admin.py:454 src/django_api_usage/models.py:134
+#: src/django_api_usage/admin.py:582 src/django_api_usage/models.py:134
 msgid "Account"
 msgstr "Kontua"
 

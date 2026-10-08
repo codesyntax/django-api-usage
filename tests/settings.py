@@ -12,8 +12,11 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "django.contrib.sites",
     "django_api_usage",
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
