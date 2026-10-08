@@ -25,7 +25,7 @@ from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
 from .buffers import flush
-from .models import ClientApp, Consumer, Endpoint, EndpointStat
+from .models import ClientApp, ClientAppAccount, Consumer, Endpoint, EndpointStat
 
 
 class CsvExportMixin:
@@ -388,22 +388,17 @@ class ClientAppAdmin(CsvExportMixin, admin.ModelAdmin):
     )
     list_filter = ("is_active",)
     search_fields = ("slug", "name", "description")
-    filter_horizontal = ("accounts",)
     fieldsets = (
         (None, {"fields": ("slug", "name", "description", "priority", "is_active")}),
         (
             _("Matching rules"),
             {
-                "fields": (
-                    "accounts",
-                    "domains",
-                    "ip_networks",
-                    "user_agent_patterns",
-                ),
+                "fields": ("domains", "ip_networks", "user_agent_patterns"),
                 "description": _(
                     "Checked in this order: account, request host, client "
                     "network, user agent. Between applications, the lowest "
-                    "priority wins."
+                    "priority wins. Accounts are assigned from the "
+                    "'Client application accounts' table."
                 ),
             },
         ),
@@ -431,3 +426,31 @@ class ClientAppAdmin(CsvExportMixin, admin.ModelAdmin):
     @admin.display(description=_("Counters"), ordering="counters_total")
     def counters_total(self, obj):
         return obj.counters_total or 0
+
+
+@admin.register(ClientAppAccount)
+class ClientAppAccountAdmin(CsvExportMixin, admin.ModelAdmin):
+    """One row per assigned account: search, do not scroll a giant list."""
+
+    actions = ("export_as_csv",)
+    csv_columns = (
+        ("client_app", "client_app__slug"),
+        ("username", "user__username"),
+        ("email", "user__email"),
+        ("notes", "notes"),
+    )
+    list_display = ("client_app", "account", "notes")
+    list_filter = ("client_app",)
+    search_fields = (
+        "user__username",
+        "user__email",
+        "user__first_name",
+        "user__last_name",
+        "notes",
+    )
+    raw_id_fields = ("user",)
+    list_select_related = ("user", "client_app")
+
+    @admin.display(description=_("Account"), ordering="user__username")
+    def account(self, obj):
+        return obj.user

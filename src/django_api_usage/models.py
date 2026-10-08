@@ -84,12 +84,6 @@ class ClientApp(models.Model):
     priority = models.PositiveSmallIntegerField(
         default=100, help_text=_("Lower wins when several apps could match.")
     )
-    accounts = models.ManyToManyField(
-        settings.AUTH_USER_MODEL,
-        blank=True,
-        related_name="+",
-        help_text=_("Users (and therefore DRF tokens) that belong to this app."),
-    )
     domains = models.TextField(
         blank=True,
         help_text=_("One host per line; matched against the Origin/Referer host."),
@@ -118,6 +112,37 @@ class ClientApp(models.Model):
 
     def user_agent_list(self):
         return [pattern.lower() for pattern in _lines(self.user_agent_patterns)]
+
+
+class ClientAppAccount(models.Model):
+    """Assigns one account (and therefore its DRF token) to an application.
+
+    One row per account, indexed, instead of a many-to-many holding the account
+    list of every application: the resolver does a single point lookup and
+    nothing has to be loaded into memory. Only real integrations belong here
+    (an ERP, a partner); ordinary readers of the mobile apps are matched by
+    their user agent, not by account.
+    """
+
+    client_app = models.ForeignKey(
+        ClientApp, on_delete=models.CASCADE, related_name="accounts"
+    )
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="api_usage_client_app",
+        verbose_name=_("Account"),
+        help_text=_("One application per account, so the token is unambiguous."),
+    )
+    notes = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        verbose_name = _("Client application account")
+        verbose_name_plural = _("Client application accounts")
+        ordering = ("client_app", "user")
+
+    def __str__(self):
+        return f"{self.client_app} ← {self.user}"
 
 
 class EndpointStat(models.Model):
