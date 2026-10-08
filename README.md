@@ -105,6 +105,11 @@ similar):
   and method), so the file can be fed straight to pandas or a spreadsheet. Use
   the "select all" link to export every row matching the current filters.
 
+If you upgraded from an earlier release, run
+`manage.py api_usage_backfill_paths` once: endpoints recorded before the path was
+captured only have their route name, and the command resolves it back to the
+path (`--dry-run` first if you want to see what it would do).
+
 ## Client applications
 
 Not every caller is a person: ERPs, partners, your own web front end and the
