@@ -1,5 +1,7 @@
 """Tests for the Application / Method changelist filters."""
 
+import re
+
 from django.contrib import admin as django_admin
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -110,11 +112,12 @@ class FilterTest(UsageTestCase):
     def test_the_endpoint_column_shows_only_the_path(self):
         html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
 
-        self.assertIn('class="field-endpoint_path"', html)
-        self.assertIn(">api/3.0/gida/</td>", html)
-        # The verb and the app have their own columns, so they are not repeated.
-        self.assertNotIn("DELETE api/3.0/gida/", html)
-        self.assertNotIn("api/3.0/gida/ (gida)", html)
+        # The verb and the app have their own columns, so the cell carries just
+        # the path. Asserted on the cells: from Django 5.1 on, the action
+        # checkbox aria-label repeats str(obj), which includes the endpoint.
+        cells = re.findall(r'<td class="field-endpoint_path">([^<]*)</td>', html)
+
+        self.assertCountEqual(cells, ["api/3.0/artikuluak/", "api/3.0/gida/"])
 
     def test_the_endpoint_column_strips_the_regex_anchors(self):
         endpoint = Endpoint.objects.create(
