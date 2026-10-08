@@ -248,7 +248,7 @@ class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
         "date",
         "application",
         "method_badge",
-        "endpoint",
+        "endpoint_path",
         "client_type",
         "client_app",
         "status_class",
@@ -287,6 +287,12 @@ class EndpointStatAdmin(CsvExportMixin, admin.ModelAdmin):
     @admin.display(description=_("Method"), ordering="endpoint__method")
     def method_badge(self, obj):
         return _method_badge_html(obj.endpoint.method)
+
+    @admin.display(description=_("Endpoint"), ordering="endpoint__route_path")
+    def endpoint_path(self, obj):
+        """Just the path: the verb and the app already have their own columns."""
+        endpoint = obj.endpoint
+        return (endpoint.route_path or endpoint.route_name or "").strip("^$")
 
     def has_add_permission(self, request):
         return False

@@ -107,6 +107,31 @@ class FilterTest(UsageTestCase):
         self.assertIn("background:#cfe2ff", html)
         self.assertIn(">POST</span>", html)
 
+    def test_the_endpoint_column_shows_only_the_path(self):
+        html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
+
+        self.assertIn('class="field-endpoint_path"', html)
+        self.assertIn(">api/3.0/gida/</td>", html)
+        # The verb and the app have their own columns, so they are not repeated.
+        self.assertNotIn("DELETE api/3.0/gida/", html)
+        self.assertNotIn("api/3.0/gida/ (gida)", html)
+
+    def test_the_endpoint_column_strips_the_regex_anchors(self):
+        endpoint = Endpoint.objects.create(
+            app_label="api", route_path="^api/3.0/eskelak/$", method="GET"
+        )
+        EndpointStat.objects.create(
+            endpoint=endpoint,
+            date="2026-10-08",
+            client_type="anon",
+            status_class="2xx",
+            count=1,
+        )
+
+        html = self.client.get(reverse(STAT_CHANGELIST)).content.decode()
+
+        self.assertIn(">api/3.0/eskelak/</td>", html)
+
     # -- filter presentation ------------------------------------------------
 
     def test_titles_are_readable_instead_of_raw_field_names(self):
