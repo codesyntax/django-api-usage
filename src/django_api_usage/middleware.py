@@ -8,6 +8,9 @@ from .conf import api_settings
 
 logger = logging.getLogger("django_api_usage")
 
+#: Synthetic status class for requests that shadow mode would have denied.
+WOULD_DENY_STATUS_CLASS = "403*"
+
 
 class ApiUsageMiddleware:
     """Record one aggregated hit per request and expose the shadow-mode header.
@@ -42,10 +45,24 @@ class ApiUsageMiddleware:
             if api_settings.TRACK_CONSUMERS:
                 consumer = api_settings.CONSUMER_RESOLVER(request)
             record_hit(dimensions, response.status_code, consumer)
+            self._record_would_deny(request, dimensions, consumer)
         except Exception:
             logger.exception("django-api-usage: could not record request")
             if not api_settings.FAIL_OPEN:
                 raise
+
+    @staticmethod
+    def _record_would_deny(request, dimensions, consumer):
+        """Count a shadow-mode deny as a synthetic ``403*`` hit (opt-in).
+
+        ``request._api_usage_would_deny`` is set by the permission classes
+        (:class:`django_api_usage.drf.HasAPIScope` and friends) when enforcement is
+        off; the same hook feeds ``X-Api-Would-Deny``.
+        """
+        if not api_settings.TRACK_WOULD_DENY:
+            return
+        if getattr(request, "_api_usage_would_deny", None):
+            record_hit(dimensions, consumer=consumer, as_class=WOULD_DENY_STATUS_CLASS)
 
     @staticmethod
     def _add_shadow_header(request, response):
