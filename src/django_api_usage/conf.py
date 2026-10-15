@@ -27,6 +27,10 @@ DEFAULTS = {
     "RETENTION_DAYS": 90,
     # Opt-in consumer attribution. Only salted hashes are stored; see the docs.
     "TRACK_CONSUMERS": False,
+    # Opt-in: also count the requests that shadow mode *would* have denied, as a
+    # synthetic "403*" status class. Shows who already hits the endpoints you are
+    # about to protect, without blocking anybody.
+    "TRACK_WOULD_DENY": False,
     # Salt used to hash consumer identifiers. Keep it secret and rotatable.
     "CONSUMER_SALT": "",
     # Resolvers (dotted path or callable).

@@ -47,15 +47,18 @@ def status_class(status_code):
     return f"{int(status_code) // 100}xx"
 
 
-def record_hit(dimensions, status_code, consumer=None):
+def record_hit(dimensions, status_code=None, consumer=None, as_class=None):
     """Record a single hit.
 
-    ``dimensions`` is a mapping with the keys in :data:`_FIELDS`.
+    ``dimensions`` is a mapping with the keys in :data:`_FIELDS`. The status class
+    is derived from ``status_code`` (``204`` -> ``2xx``) unless ``as_class`` is
+    given, which is how shadow-mode "would deny" hits are recorded (``403*``).
     """
+    klass = as_class or status_class(status_code)
     if api_settings.BUFFER_BACKEND == "db":
-        _write_to_db(dimensions, status_class(status_code), 1)
+        _write_to_db(dimensions, klass, 1)
     else:
-        _buffer(dimensions, status_class(status_code))
+        _buffer(dimensions, klass)
     if consumer and api_settings.TRACK_CONSUMERS:
         _touch_consumer(consumer)
 

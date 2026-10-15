@@ -67,6 +67,7 @@ API_USAGE = {
     "RETENTION_DAYS": 90,
     "TRACK_CONSUMERS": False,        # opt-in; stores hashed callers only
     "CONSUMER_SALT": "a-rotatable-secret",
+    "TRACK_WOULD_DENY": False,       # opt-in; counts shadow-mode denies as "403*"
 }
 ```
 
